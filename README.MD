@@ -8,15 +8,23 @@ No additional packages are required to run CardRenamer
 1. Download a VALORANT-compatible version of UModel, such as [this one](https://www.gildor.org/smf/index.php?action=dlattach;topic=7040.0;attach=2029)
 2. Get a `locres.json` file, which you can do with [FModel](https://ci.appveyor.com/project/iAmAsval/fmodel/branch/master/artifacts)
 3. Run the script once, this will create a file called `paths.json`
-4. Fill out the requested paths in `paths.json` such that:  
-**valorant_path**: path to your VALORANT installation folder  
-**umodel_path**: path to the UModel executable  
-**aes_path**: path to the AES key (a text file containing only the key)  
-**locres_path**: path to the `locres.json` file  
-**extract_path**: working path for the script, **will be DELETED after finishing**  
-**target_path**: paths where all the cards will be after finishing
+4. Fill out the requested paths in `paths.json`
 5. Run the script again
 6. The cards will now be in `target_path`, enjoy!
+
+## Regarding `paths.json`
+
+**valorant_path**: path to your VALORANT installation folder  
+
+**umodel_path**: path to the UModel executable  
+
+**aes_path**: path to the AES key (a text file containing only the key)  
+
+**locres_path**: path to the `locres.json` file  
+
+**extract_path**: working path for the script, **WILL BE DELETED AFTER FINISHING**  
+
+**target_path**: path where all the cards will be after finishing
 
 ### Credits
 Gildor for creating UModel [Go](https://www.gildor.org/en/projects/umodel)  

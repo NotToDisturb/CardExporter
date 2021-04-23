@@ -9,6 +9,9 @@ from validate_paths import validate_paths_json
 
 UMODEL_EXPORT = r"/Game/Personalization/PlayerCards/*"
 UMODEL_SAVE = r"/Game/Personalization/PlayerCards/*/*_UIData.uasset"
+UMODEL_RELATIVE_EXPORT = os.path.normpath(".\\Exports\\Game\\Personalization\\PlayerCards\\")
+UMODEL_RELATIVE_SAVE = os.path.normpath(".\\Saves\\Game\\Personalization\\PlayerCards\\")
+
 DISPLAY_NAME_OFFSET = int("0x76", base=16)
 
 image_paths = {}
@@ -53,12 +56,12 @@ def umodel_extract(paths_dict):
     subprocess1.wait()
     subprocess2.wait()
     print("Moving exports...")
-    subprocess1 = subprocess.Popen(["robocopy", ".\\Exports\\Game\\Personalization\\PlayerCards\\",
+    subprocess1 = subprocess.Popen(["robocopy", UMODEL_RELATIVE_EXPORT,
                                     paths_dict["extract_path"], "/E", "/IS", "/MOVE"],
                                    stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
     subprocess1.wait()
     print("Moving saves...\n")
-    subprocess1 = subprocess.Popen(["robocopy", ".\\Saves\\Game\\Personalization\\PlayerCards\\",
+    subprocess1 = subprocess.Popen(["robocopy", UMODEL_RELATIVE_SAVE,
                                     paths_dict["extract_path"], "/E", "/IS", "/MOVE"],
                                    stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
     subprocess1.wait()
