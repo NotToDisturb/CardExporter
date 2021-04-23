@@ -1,9 +1,10 @@
 import os
-import csv
 import re
 import shutil
 import subprocess
 import json
+
+from validate_paths import validate_paths_json
 
 
 UMODEL_EXPORT = r"/Game/Personalization/PlayerCards/*"
@@ -25,65 +26,57 @@ def read_paths_json():
             print("[ERROR] Could not open 'paths.json'\n")
             exit()
     else:
-        paths_dict = {"valorant_path": "", "umodel_path": "", "aes_path": "", "locres_path": "", "export_path": "", "target_path": ""}
+        paths_dict = {"valorant_path": "", "umodel_path": "", "aes_path": "",
+                      "locres_path": "", "extract_path": "", "target_path": ""}
         with open("paths.json", "xt") as paths_file:
             json.dump(paths_dict, paths_file, indent=4)
             print("[ERROR] Created 'paths.json', fill out before running again\n")
             exit()
 
 
-def validate_paths_json(paths_dict):
-    return paths_dict["valorant_path"] != "" and os.path.exists(paths_dict["valorant_path"]) and \
-           paths_dict["umodel_path"] != "" and os.path.exists(paths_dict["umodel_path"]) and \
-           paths_dict["aes_path"] != "" and os.path.exists(paths_dict["aes_path"])
-
-
-def normalize_path(path):
-    return os.path.normpath(os.path.abspath(path))
-
-
 def normalize_paths(paths_dict):
-    for key, value in paths_dict.items():
-        paths_dict[key] = normalize_path(value)
+    for path, value in paths_dict.items():
+        paths_dict[path] = os.path.normpath(os.path.abspath(value))
 
 
-def run_umodel_export(paths_dict):
+def umodel_extract(paths_dict):
+    print("=== UModel extract ===")
     umodel_filename = os.path.basename(paths_dict["umodel_path"])
     os.chdir(os.path.dirname(paths_dict["umodel_path"]))
-    print("\n\n########################################\n"
-          "Exporting PlayerCards using UModel...\n"
-          "########################################")
+    print("Extracting playercards...")
     subprocess1 = subprocess.Popen([umodel_filename, "-path=\"" + paths_dict["valorant_path"] + "\"",
-                                    "-game=ue4.24", "-aes=@" + paths_dict["aes_path"], "-export", UMODEL_EXPORT])
+                                    "-game=ue4.24", "-aes=@" + paths_dict["aes_path"], "-export", UMODEL_EXPORT],
+                                   stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
     subprocess2 = subprocess.Popen([umodel_filename, "-path=\"" + paths_dict["valorant_path"] + "\"",
-                                    "-game=ue4.24", "-aes=@" + paths_dict["aes_path"], "-save", UMODEL_SAVE])
+                                    "-game=ue4.24", "-aes=@" + paths_dict["aes_path"], "-save", UMODEL_SAVE],
+                                   stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
     subprocess1.wait()
     subprocess2.wait()
-    print("\n\n########################################\n"
-          "Moving exports...\n"
-          "########################################")
+    print("Moving exports...")
     subprocess1 = subprocess.Popen(["robocopy", ".\\Exports\\Game\\Personalization\\PlayerCards\\",
-                                    paths_dict["export_path"], "/E", "/IS", "/MOVE"])
+                                    paths_dict["extract_path"], "/E", "/IS", "/MOVE"],
+                                   stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
     subprocess1.wait()
-    print("\n\n########################################\n"
-          "Moving saves...\n"
-          "########################################")
+    print("Moving saves...\n")
     subprocess1 = subprocess.Popen(["robocopy", ".\\Saves\\Game\\Personalization\\PlayerCards\\",
-                                    paths_dict["export_path"], "/E", "/IS", "/MOVE"])
+                                    paths_dict["extract_path"], "/E", "/IS", "/MOVE"],
+                                   stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
     subprocess1.wait()
 
 
-def search_path(cards_path):
+def index_cards(cards_path):
     for entry in os.listdir(cards_path):
         norm_entry = os.path.join(cards_path, entry)
         if os.path.isdir(norm_entry):
-            search_path(norm_entry)
+            index_cards(norm_entry)
         elif entry.endswith("UIData.uexp"):
             uidata_paths.append(norm_entry)
         elif entry.endswith(".png"):
             image_array = image_paths.get(cards_path, [])
             image_array.append(entry)
             image_paths[cards_path] = image_array
+        elif not entry.endswith(".uasset"):
+            print("[WARN] Unexpected file type:", norm_entry)
 
 
 def get_display_name_from_uidata(uidata_path):
@@ -95,14 +88,13 @@ def get_display_name_from_uidata(uidata_path):
         return display_name
 
 
-def export_card_display_names(locres_path):
+def find_card_display_names(locres_path):
     with open(locres_path, "rt", encoding="utf-8") as csv_file:
-        reader = csv.DictReader(csv_file, delimiter=",")
-        for line in reader:
-            if "ercard" in line["Key"].lower():
-                key = line["Key"].split("/")[1]
-                display_names[key] = line["Source"]
-        return -1
+        locres = json.load(csv_file)
+        for outer_key, each_dict in locres.items():
+            for key, value in each_dict.items():
+                if "ercard" in key.lower():
+                    display_names[key] = value
 
 
 def print_uidata_name_associations():
@@ -125,11 +117,11 @@ def name_to_readable(image_name, card_name, display_new_name):
     return display_new_name + image_name[sub_index:]
 
 
-def name_clean_not_allowed(string):
-    return string.replace("/", "").replace("?", "").replace(":", "")
+def name_clean_not_allowed(name):
+    return name.replace("/", "").replace("?", "").replace(":", "")
 
 
-def copy_cards(cards_path, target_path):
+def copy_named_cards(cards_path, target_path):
     for uidata_path in uidata_paths:
         card_name = re.sub("(_1|_2|)_UIData.uexp", "", os.path.basename(uidata_path))
         uidata = get_display_name_from_uidata(uidata_path)
@@ -157,43 +149,30 @@ def copy_unnamed_cards(cards_path, target_path):
 
 
 paths_json = read_paths_json()
-if not validate_paths_json(paths_json):
-    print("\n\n########################################\n"
-          "[ERROR] Invalid path(s) in 'paths.json'\n"
-          "########################################")
+normalize_paths(paths_json)
+paths_validated = validate_paths_json(paths_json)
+if paths_validated:
+    print(paths_validated)
     exit()
 
-normalize_paths(paths_json)
+umodel_extract(paths_json)
 
-run_umodel_export(paths_json)
-
+print("Cleaning previous export...\n")
 shutil.rmtree(paths_json["target_path"], ignore_errors=True)
 os.mkdir(paths_json["target_path"])
 
-print("\n\n########################################\n"
-      "Cataloguing cards...\n"
-      "########################################")
-search_path(paths_json["export_path"])
+print("Cataloguing cards...")
+index_cards(paths_json["extract_path"])
 
-print("\n\n########################################\n"
-      "Exporting display names...\n"
-      "########################################")
-export_card_display_names(paths_json["locres_path"])
+print("\nExporting display names...\n")
+find_card_display_names(paths_json["locres_path"])
 
-print("\n\n########################################\n"
-      "Copying and renaming cards...\n"
-      "########################################")
-copy_cards(paths_json["export_path"], paths_json["target_path"])
-copy_unnamed_cards(paths_json["export_path"], paths_json["target_path"])
+print("Copying and renaming cards...\n")
+copy_named_cards(paths_json["extract_path"], paths_json["target_path"])
+copy_unnamed_cards(paths_json["extract_path"], paths_json["target_path"])
 
-print("\n\n########################################\n"
-      "Cleaning export...\n"
-      "########################################")
-shutil.rmtree(paths_json["export_path"], ignore_errors=True)
-
-print("\n\n########################################\n"
-      "Finished execution.\n"
-      "########################################")
+print("Cleaning export...")
+shutil.rmtree(paths_json["extract_path"], ignore_errors=True)
 
 
 
