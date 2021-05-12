@@ -5,8 +5,10 @@ import subprocess
 import json
 
 from validate_paths import validate_paths_json
+from locres_exporter import LocresExporter
 
 
+CARDS_CONFIG = "cards_config.json"
 UMODEL_EXPORT = r"/Game/Personalization/PlayerCards/*"
 UMODEL_SAVE = r"/Game/Personalization/PlayerCards/*/*_UIData.uasset"
 UMODEL_RELATIVE_EXPORT = os.path.normpath(".\\Exports\\Game\\Personalization\\PlayerCards\\")
@@ -21,25 +23,35 @@ associated_names = {}
 
 
 def read_paths_json():
-    if os.path.exists("paths.json"):
+    if os.path.exists(CARDS_CONFIG):
         try:
-            with open("paths.json", "rt") as paths_file:
+            with open(CARDS_CONFIG, "rt") as paths_file:
                 return json.load(paths_file)
-        except:
-            print("[ERROR] Could not open 'paths.json'\n")
+        except OSError:
+            print("[ERROR] Could not open '" + CARDS_CONFIG + "'\n")
+            exit()
+        except ValueError:
+            print("[ERROR] '" + CARDS_CONFIG + "' has an invalid structure\n")
             exit()
     else:
         paths_dict = {"valorant_path": "", "umodel_path": "", "aes_path": "",
                       "locres_path": "", "extract_path": "", "target_path": ""}
-        with open("paths.json", "xt") as paths_file:
+        with open(CARDS_CONFIG, "xt") as paths_file:
             json.dump(paths_dict, paths_file, indent=4)
-            print("[ERROR] Created 'paths.json', fill out before running again\n")
+            print("[ERROR] Created '" + CARDS_CONFIG + "', fill out before running again\n")
             exit()
 
 
 def normalize_paths(paths_dict):
     for path, value in paths_dict.items():
         paths_dict[path] = os.path.normpath(os.path.abspath(value))
+
+
+def locres_export(locres_path):
+    exporter = LocresExporter()
+    exporter.export_locres()
+    exporter.locres_to_csv()
+    exporter.csv_to_json(locres_path, force_overwrite=True)
 
 
 def umodel_extract(paths_dict):
@@ -157,6 +169,9 @@ paths_validated = validate_paths_json(paths_json)
 if paths_validated:
     print(paths_validated)
     exit()
+
+print("Exporting locres file...\n")
+locres_export(paths_json["locres_path"])
 
 umodel_extract(paths_json)
 

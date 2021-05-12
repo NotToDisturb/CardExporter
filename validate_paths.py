@@ -47,7 +47,7 @@ def validate_locres_file_path(path, value):
 validator_hub = {"valorant_path": validate_standard_folder_path,
                  "umodel_path": validate_standard_file_path,
                  "aes_path": validate_standard_file_path,
-                 "locres_path": validate_standard_file_path,
+                 "locres_path": validate_not_empty_path,
                  "extract_path": validate_not_empty_path,
                  "target_path": validate_not_empty_path}
 
