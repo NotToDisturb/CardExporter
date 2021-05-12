@@ -11,7 +11,7 @@ CardRenamer is a small script that outputs all the player cards in VALORANT with
 7. Run the script again
 8. The cards will now be in `target_path`, enjoy!
 
-## Regarding `paths.json`
+## Regarding `cards_config.json`
 **valorant_path**: path to your VALORANT installation folder.  
 
 **umodel_path**: path to the UModel executable.  
