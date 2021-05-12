@@ -1,5 +1,6 @@
 ## CardRenamer
 CardRenamer is a small script that outputs all the player cards in VALORANT with their in-game display name.
+It uses Python 3.8.
 
 ### Instructions
 1. Download a VALORANT-compatible version of UModel, such as [this one](https://www.gildor.org/smf/index.php?action=dlattach;topic=7040.0;attach=2029)
