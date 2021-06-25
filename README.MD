@@ -26,7 +26,7 @@ It will be exported to and read from this path.
 
 **target_path**: path where all the cards will be after the script ends.
 
-### Regarding `locres_config.json`
+## Regarding `locres_config.json`
 **quickbms_path**: path to the QuickBMS executable.
 
 **ut4_path**: path to the UnrealTournament4 script.

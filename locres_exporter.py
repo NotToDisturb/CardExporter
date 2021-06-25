@@ -41,7 +41,7 @@ class LocresExporter:
             csv_read = csv.DictReader(csv_locres, delimiter=",")
             json_dict = {}
             for index, line in enumerate(csv_read):
-                add_child(json_dict, line["Key"].split("/"), line["Source"])
+                add_child(json_dict, line["Key"].replace("KAY/O", "KAYO").split("/"), line["Source"])
 
             self.__begin_json_parse_dump(json_path, json_dict, force_overwrite)
         os.remove(csv_path)

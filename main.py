@@ -14,7 +14,7 @@ UMODEL_SAVE = r"/Game/Personalization/PlayerCards/*/*_UIData.uasset"
 UMODEL_RELATIVE_EXPORT = os.path.normpath(".\\Exports\\Game\\Personalization\\PlayerCards\\")
 UMODEL_RELATIVE_SAVE = os.path.normpath(".\\Saves\\Game\\Personalization\\PlayerCards\\")
 
-DISPLAY_NAME_OFFSET = int("0x76", base=16)
+DISPLAY_NAME_OFFSET = int("0x7A", base=16)
 
 image_paths = {}
 uidata_paths = []
@@ -100,7 +100,7 @@ def get_display_name_from_uidata(uidata_path):
         display_name = ""
         while (current_read := hex_file.read(1)) != b'\x00':
             display_name += current_read.decode("utf-8")
-        return display_name
+        return display_name.replace("/", "")
 
 
 def find_card_display_names(locres_path):
@@ -108,7 +108,7 @@ def find_card_display_names(locres_path):
         locres = json.load(csv_file)
         for outer_key, each_dict in locres.items():
             for key, value in each_dict.items():
-                if "ercard" in key.lower():
+                if "card" in key.lower():
                     display_names[key] = value
 
 
@@ -186,6 +186,7 @@ print("\nExporting display names...\n")
 find_card_display_names(paths_json["locres_path"])
 
 print("Copying and renaming cards...\n")
+print_uidata_name_associations()
 copy_named_cards(paths_json["extract_path"], paths_json["target_path"])
 copy_unnamed_cards(paths_json["extract_path"], paths_json["target_path"])
 
